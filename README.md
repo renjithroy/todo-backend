@@ -1,4 +1,4 @@
- **# Todo Backend**
+# Todo Backend
 
 **A RESTful API for managing todos, built with Node.js, Express, and MongoDB.**
 
