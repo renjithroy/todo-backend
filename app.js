@@ -4,8 +4,8 @@ const app = express();
 const mongoose = require("mongoose");
 const port = 3000;
 
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 
 const Todos = require("./Schema/todos")
 
@@ -17,21 +17,24 @@ mongoose.connect('mongodb://127.0.0.1:27017/todos')
 // Get all TODOs
 app.get("/todos", async (req, res) => {
     const todoDB = await Todos.find({});
+    if (!todoDB) {
+        return res.status(404).send("No todos found");
+    }
     res.send(todoDB);
 })
 
 // Get a single TODO by id
 app.get("/todos/:id", async (req, res) => {
     const { id } = req.params;
-    try{
-    const todo = await Todos.findOne({ todoId: id });
-    if(!todo){
-        return res.status(404).send("No todo found with the given ID");
-    }
+    try {
+        const todo = await Todos.findOne({ todoId: id });
+        if (!todo) {
+            return res.status(404).send("No todo found with the given ID");
+        }
 
-    res.status(200).send(todo);
+        res.status(200).send(todo);
     }
-    catch(err){
+    catch (err) {
         console.error("Error fetching todo:", err);
         res.status(500).send(`Internal Server Error: ${err.message}`);
     }
@@ -55,7 +58,7 @@ app.post("/todos", async (req, res) => {
 
 // Update a TODO by id
 app.patch("/todos/:id", async (req, res) => {
-    const { todo } = req.body;
+    const { todo, isDone } = req.body;
     const { id } = req.params;
 
     try {
@@ -64,7 +67,12 @@ app.patch("/todos/:id", async (req, res) => {
             console.error("Todo with ID not found");
             return res.status(404).send("Todo with ID not found");
         }
-        currentTodo.todoDesc = todo;
+        if (todo) {
+            currentTodo.todoDesc = todo;
+        }
+
+        currentTodo.isDone = isDone;
+
         await currentTodo.save();
         res.send(currentTodo);
     }
@@ -79,7 +87,7 @@ app.delete("/todos/:id", async (req, res) => {
     const { id } = req.params;
     try {
         const deletedTodo = await Todos.deleteOne({ todoId: id });
-        if(deletedTodo.deletedCount === 0){
+        if (deletedTodo.deletedCount === 0) {
             return res.status(404).send("No todos found for given id");
         }
         res.status(200).send(deletedTodo);
