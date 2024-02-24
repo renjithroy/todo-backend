@@ -16,11 +16,16 @@ mongoose.connect('mongodb://127.0.0.1:27017/todos')
 
 // Get all TODOs
 app.get("/todos", async (req, res) => {
+
     const todoDB = await Todos.find({});
     if (!todoDB) {
-        return res.status(404).send("No todos found");
+        return res.status(404).json({
+            error: "No todos found"
+        });
     }
-    res.send(todoDB);
+    res.json({
+        todoList: todoDB
+    });
 })
 
 // Get a single TODO by id
@@ -29,14 +34,20 @@ app.get("/todos/:id", async (req, res) => {
     try {
         const todo = await Todos.findOne({ todoId: id });
         if (!todo) {
-            return res.status(404).send("No todo found with the given ID");
+            return res.status(404).json({
+                error: "No todo found with the given ID"
+            });
         }
 
-        res.status(200).send(todo);
+        res.status(200).json({
+            todo: todo
+        });
     }
     catch (err) {
         console.error("Error fetching todo:", err);
-        res.status(500).send(`Internal Server Error: ${err.message}`);
+        res.status(500).json({
+            error: `Internal Server Error: ${ err.message }`
+        });
     }
 })
 
@@ -49,10 +60,14 @@ app.post("/todos", async (req, res) => {
             todoDesc: todo
         })
         const savedTodo = await newTodo.save();
-        res.status(201).send(savedTodo);
+        res.status(201).json({
+            savedTodo: savedTodo 
+        });
     }
     catch (err) {
-        res.send(`Failed to create Todo. ${err.message}`)
+        res.json({
+            error: `Failed to create Todo. ${err.message}`
+        })
     }
 })
 
@@ -65,7 +80,9 @@ app.patch("/todos/:id", async (req, res) => {
         const currentTodo = await Todos.findOne({ todoId: id })
         if (!currentTodo) {
             console.error("Todo with ID not found");
-            return res.status(404).send("Todo with ID not found");
+            return res.status(404).json({
+                error: "Todo with given ID not found"
+            });
         }
         if (todo) {
             currentTodo.todoDesc = todo;
@@ -74,11 +91,17 @@ app.patch("/todos/:id", async (req, res) => {
         currentTodo.isDone = isDone;
 
         await currentTodo.save();
-        res.send(currentTodo);
+
+        res.json({
+            currentTodo: currentTodo
+        });
     }
     catch (err) {
         console.error("Error saving todo:", err);
-        res.status(500).send(`Internal Server Error: ${err.message}`);
+
+        res.status(500).json({
+            error: `Internal Server Error: ${err.message}`
+        });
     }
 })
 
@@ -88,13 +111,26 @@ app.delete("/todos/:id", async (req, res) => {
     try {
         const deletedTodo = await Todos.deleteOne({ todoId: id });
         if (deletedTodo.deletedCount === 0) {
-            return res.status(404).send("No todos found for given id");
+            return res.status(404).json({
+                error: "No todos found for given id"
+            });
         }
-        res.status(200).send(deletedTodo);
+        res.status(200).json({
+            deletedTodo: deletedTodo
+        });
     } catch (err) {
         console.error("Todo could not be deleted. ", err)
-        res.status(500).send(`Internal Server Error: ${err.message}`);
+        res.status(500).json({
+            error: `Internal Server Error: ${err.message}`
+        });
     }
+})
+
+
+app.use((err, req, res, next) => {
+    res.status(500).json({
+        error: `Internal Server Error: ${err.message}`
+    });
 })
 
 app.listen(port, () => {
