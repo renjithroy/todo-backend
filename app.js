@@ -126,7 +126,6 @@ app.delete("/todos/:id", async (req, res) => {
     }
 })
 
-
 app.use((err, req, res, next) => {
     res.status(500).json({
         error: `Internal Server Error: ${err.message}`
